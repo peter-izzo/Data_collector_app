@@ -20,17 +20,27 @@ class Data(db.Model):
     pct=db.Column(db.DECIMAL)
 
 def get_avg_height(height):
-    return db.session.query(func.avg(height)).scalar()
+    return db.session.query(func.avg(Data.height)).scalar()
 
+#makes sure users can only input unique emails
 def is_email_available(email):
     return (db.session.query(Data).filter(Data.email==email).count()==0)
 
-
+#saves input data
 def save_data(email, height, color):
     data=Data(email=email, height=height, color=color)
     db.session.add(data)
     db.session.commit()
     return data
+
+#Function that takes percentage of user input eye color
+def find_pct(color):
+    return db.session.query(
+            db.func.count().filter(Data.color == color) * 100.0 /
+            db.func.count()).\
+        scalar()
+    #num = text("SELECT color, count(*) AS user_count, COUNT(*) * 100.0/ SUM(COUNT(*)) OVER() as percent FROM data;")
+    #result = connection.execute(num)
 
 
 @app.route("/")
@@ -59,21 +69,18 @@ def success():
 
 
         save_data(email, height, color)
-        send_email(email, height, color, pct)
-        average_height = get_avg_height(height)
-        #thought I could add sql code to python to get the db to create the percentage Column
-        #from there I would email the percentage of whatever color user input back to them
-        #pct = SELECT color, count(*) AS user_count,
-        #COUNT(*) * 100.0/ SUM(COUNT(*)) OVER() as percent
-        print(average_height)
-        print(pct)
+        get_avg_height(height)
+        #rounded avg of height & eye color percent
+        average_height = round(get_avg_height(height))
+        count = db.session.query(Data.height).count()
+        find_pct(color)
+        rounded_pct = round(find_pct(color))
+        send_email(email, height, color, average_height, rounded_pct, count)
+
+
         return render_template("success.html")
 
 
-
-     #tried to do the same thing with this one but it didn't work
-    #return render_template("index.html",
-     #input_value="Seems like you've input an invalid color.")
 
 if __name__ == '__main__':
     app.debug=True
