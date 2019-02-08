@@ -39,8 +39,6 @@ def find_pct(color):
             db.func.count().filter(Data.color == color) * 100.0 /
             db.func.count()).\
         scalar()
-    #num = text("SELECT color, count(*) AS user_count, COUNT(*) * 100.0/ SUM(COUNT(*)) OVER() as percent FROM data;")
-    #result = connection.execute(num)
 
 
 @app.route("/")
